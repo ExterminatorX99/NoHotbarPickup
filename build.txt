@@ -1,0 +1,3 @@
+displayName = No Hotbar Pickup
+author = ExterminatorX
+version = 0.1
