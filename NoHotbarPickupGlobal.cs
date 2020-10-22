@@ -138,8 +138,10 @@ namespace NoHotbarPickup
 			if (canPickUp(0, 50, firstEmptySlot))
 				return false;
 
-			if (firstEmptySlot != -1)
+			if (firstEmptySlot != -1) {
 				player.inventory[firstEmptySlot] = item;
+				ItemText.NewText(item, item.stack);
+			}
 
 			return false;
 		}
