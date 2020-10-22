@@ -57,8 +57,12 @@ namespace NoHotbarPickup
 			// 50-53 coins
 			// 54-57 ammo
 			// 58 mouse ???
+			void textAndSound(int stack) {
+				ItemText.NewText(item, stack);
+				Main.PlaySound(SoundID.Grab, player.position);
+			}
 
-			bool canPickUp(int from, int to, int emptySlot) {
+			bool pickup(int from, int to, int emptySlot) {
 				for (int i = from; i < to; i++) {
 					// check inventory and hotbar for item
 					Item invItem = player.inventory[i];
@@ -71,7 +75,7 @@ namespace NoHotbarPickup
 							// item can't stack
 							if (emptySlot != -1) {
 								player.inventory[emptySlot] = item;
-								ItemText.NewText(item, item.stack);
+								textAndSound(item.stack);
 							}
 						}
 						else if (invItem.stack + item.stack > invItem.maxStack) {
@@ -83,17 +87,17 @@ namespace NoHotbarPickup
 							//	add new item using remainder (if there's a spot for it)
 							if (emptySlot != -1) {
 								player.inventory[emptySlot] = item;
-								ItemText.NewText(item, origStack);
+								textAndSound(origStack);
 							}
 							else {
 								player.QuickSpawnClonedItem(item, item.stack);
-								ItemText.NewText(item, origStack - item.stack);
+								textAndSound(origStack - item.stack);
 							}
 						}
 						else {
 							// item can stack
 							invItem.stack += item.stack;
-							ItemText.NewText(item, item.stack);
+							textAndSound(item.stack);
 						}
 						// item has been picked up
 						return true;
@@ -112,7 +116,7 @@ namespace NoHotbarPickup
 						break;
 					}
 
-				if (canPickUp(54, 58, firstEmptyAmmoSlot))
+				if (pickup(54, 58, firstEmptyAmmoSlot))
 					return false;
 			}
 
@@ -135,12 +139,12 @@ namespace NoHotbarPickup
 						break;
 					}
 
-			if (canPickUp(0, 50, firstEmptySlot))
+			if (pickup(0, 50, firstEmptySlot))
 				return false;
 
 			if (firstEmptySlot != -1) {
 				player.inventory[firstEmptySlot] = item;
-				ItemText.NewText(item, item.stack);
+				textAndSound(item.stack);
 			}
 
 			return false;
