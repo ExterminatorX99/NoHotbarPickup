@@ -10,8 +10,8 @@ namespace NoHotbarPickup
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 
 		[Label("Items go into hotbar when inventory is full")]
-		[Tooltip("If disabled and inventory full, items can't be picked up, even if hotbar has room for them")]
-		[DefaultValue(true)]
+		[Tooltip("If this is disabled and inventory is full, items can't be picked up, even if hotbar has room for them")]
+		[DefaultValue(false)]
 		public bool hotbarWhenFull;
 
 		[Label("Items should go into the last available slot of the inventory")]
