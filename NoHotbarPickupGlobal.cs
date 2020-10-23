@@ -8,7 +8,27 @@ namespace NoHotbarPickup
 	internal class NoHotbarPickupGlobal : GlobalItem
 	{
 
-		private static readonly short[] ammos = {
+		private static readonly int[] ignored = {
+			// Coins
+			ItemID.CopperCoin,
+			ItemID.SilverCoin,
+			ItemID.GoldCoin,
+			ItemID.PlatinumCoin,
+			// Hearts
+			ItemID.Heart,
+			ItemID.CandyApple,
+			ItemID.CandyCane,
+			// Mana stars
+			ItemID.Star,
+			ItemID.SoulCake,
+			ItemID.SugarPlum,
+			// Nebula buffs
+			ItemID.NebulaPickup1,
+			ItemID.NebulaPickup2,
+			ItemID.NebulaPickup3
+		};
+
+		private static readonly int[] ammos = {
 			ItemID.Gel, // Gel
 			ItemID.WoodenArrow, // Arrow
 			ItemID.CopperCoin, // Coin
@@ -28,29 +48,12 @@ namespace NoHotbarPickup
 		};
 
 		public override bool OnPickup(Item item, Player player) {
-			switch (item.type) {
-				// Coins
-				case ItemID.CopperCoin:
-				case ItemID.SilverCoin:
-				case ItemID.GoldCoin:
-				case ItemID.PlatinumCoin:
-				// Hearts
-				case ItemID.Heart:
-				case ItemID.CandyApple:
-				case ItemID.CandyCane:
-				// Mana stars
-				case ItemID.Star:
-				case ItemID.SoulCake:
-				case ItemID.SugarPlum:
-				// Nebula buffs
-				case ItemID.NebulaPickup1:
-				case ItemID.NebulaPickup2:
-				case ItemID.NebulaPickup3:
-					return true;
-			}
+			if (ignored.Contains(item.type))
+				return true;
 
 			bool hotbarWhenFull = ModContent.GetInstance<NoHotbarPickupConfig>().hotbarWhenFull;
 			bool pickupDirection = ModContent.GetInstance<NoHotbarPickupConfig>().pickupDirection;
+
 			// player.inventory [59]
 			// 0-9 hotbar
 			// 10-49 are actual inventory
@@ -107,7 +110,7 @@ namespace NoHotbarPickup
 				return false;
 			}
 
-			if (ammos.Any(type => type == item.ammo)) {
+			if (ammos.Contains(item.ammo)) {
 				int firstEmptyAmmoSlot = -1;
 
 				for (int i = 54; i < 58; i++)
