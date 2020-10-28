@@ -153,27 +153,10 @@ namespace NoHotbarPickup
 			return false;
 		}
 
-		public override bool CanPickup(Item item, Player player) {
-			switch (item.type) {
-				// Coins
-				case ItemID.CopperCoin:
-				case ItemID.SilverCoin:
-				case ItemID.GoldCoin:
-				case ItemID.PlatinumCoin:
-				// Hearts
-				case ItemID.Heart:
-				case ItemID.CandyApple:
-				case ItemID.CandyCane:
-				// Mana stars
-				case ItemID.Star:
-				case ItemID.SoulCake:
-				case ItemID.SugarPlum:
-				// Nebula buffs
-				case ItemID.NebulaPickup1:
-				case ItemID.NebulaPickup2:
-				case ItemID.NebulaPickup3:
-					return true;
-			}
+		public override bool CanPickup(Item item, Player player)
+		{
+			if (ignored.Contains(item.type))
+				return true;
 
 			bool hotbarWhenFull = ModContent.GetInstance<NoHotbarPickupConfig>().hotbarWhenFull;
 			bool pickupDirection = ModContent.GetInstance<NoHotbarPickupConfig>().pickupDirection;
@@ -184,10 +167,10 @@ namespace NoHotbarPickup
 			// 54-57 ammo
 			// 58 mouse ???
 
-			bool canPickUp(int from, int to) {
+			bool canPickup(int from, int to) {
 				for (int i = from; i < to; i++) {
 					// check inventory and hotbar for item
-					ref Item invItem = ref player.inventory[i];
+					Item invItem = player.inventory[i];
 					if (invItem.type == item.type) {
 						// item already in inventory
 						if (invItem.stack == invItem.maxStack)
@@ -199,7 +182,7 @@ namespace NoHotbarPickup
 				return false;
 			}
 
-			if (ammos.Any(type => type == item.ammo) && canPickUp(54, 58))
+			if (ammos.Any(type => type == item.ammo) && canPickup(54, 58))
 				return true;
 
 			// find open slot based on config option `pickupDirection`
@@ -221,7 +204,7 @@ namespace NoHotbarPickup
 						break;
 					}
 
-			return canPickUp(0, 50) || firstEmptySlot != -1;
+			return canPickup(0, 50) || firstEmptySlot != -1;
 		}
 	}
 }
