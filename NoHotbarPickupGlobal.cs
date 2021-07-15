@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -7,52 +8,77 @@ namespace NoHotbarPickup
 {
 	internal class NoHotbarPickupGlobal : GlobalItem
 	{
+		private static IEnumerable<int> _ignored;
 
-		private static readonly int[] ignored = {
-			// Coins
-			ItemID.CopperCoin,
-			ItemID.SilverCoin,
-			ItemID.GoldCoin,
-			ItemID.PlatinumCoin,
-			// Hearts
-			ItemID.Heart,
-			ItemID.CandyApple,
-			ItemID.CandyCane,
-			// Mana stars
-			ItemID.Star,
-			ItemID.SoulCake,
-			ItemID.SugarPlum,
-			// Nebula buffs
-			ItemID.NebulaPickup1,
-			ItemID.NebulaPickup2,
-			ItemID.NebulaPickup3
-		};
+		private static IEnumerable<int> _ammo;
 
-		private static readonly int[] ammos = {
-			ItemID.Gel, // Gel
-			ItemID.WoodenArrow, // Arrow
-			ItemID.CopperCoin, // Coin
-			ItemID.FallenStar, // FallenStar
-			ItemID.MusketBall, // Bullet
-			ItemID.SandBlock, // Sand
-			ItemID.Seed, // Dart
-			ItemID.RocketI, // Rocket
-			ItemID.GreenSolution, // Solution
-			ItemID.Flare, // Flare
-			ItemID.Snowball, // Snowball
-			ItemID.StyngerBolt, // StyngerBolt
-			ItemID.CandyCorn, // CandyCorn
-			ItemID.ExplosiveJackOLantern, // JackOLantern
-			ItemID.Stake, // Stake
-			ItemID.Nail // NailFriendly
-		};
+		public static void Load()
+		{
+			LoadIgnored();
+			LoadAmmos();
+		}
 
-		public override bool OnPickup(Item item, Player player) {
-			if (ignored.Contains(item.type))
+		private static void LoadIgnored()
+		{
+			_ignored = new List<int>
+			{
+				// Coins
+				ItemID.CopperCoin,
+				ItemID.SilverCoin,
+				ItemID.GoldCoin,
+				ItemID.PlatinumCoin,
+				// Hearts
+				ItemID.Heart,
+				ItemID.CandyApple,
+				ItemID.CandyCane,
+				// Mana stars
+				ItemID.Star,
+				ItemID.SoulCake,
+				ItemID.SugarPlum,
+				// Nebula buffs
+				ItemID.NebulaPickup1,
+				ItemID.NebulaPickup2,
+				ItemID.NebulaPickup3
+			};
+			//_ignored = _ignored.Concat(ItemID.Sets.NebulaPickup.Where(b => b).Select((_, i) => i)); // TODO why doesn't this work?
+		}
+
+		private static void LoadAmmos()
+		{
+			_ammo = new List<int>
+			{
+				ItemID.Gel, // Gel
+				ItemID.WoodenArrow, // Arrow
+				ItemID.CopperCoin, // Coin
+				ItemID.FallenStar, // FallenStar
+				ItemID.MusketBall, // Bullet
+				ItemID.SandBlock, // Sand
+				ItemID.Seed, // Dart
+				ItemID.RocketI, // Rocket
+				ItemID.GreenSolution, // Solution
+				ItemID.Flare, // Flare
+				ItemID.Snowball, // Snowball
+				ItemID.StyngerBolt, // StyngerBolt
+				ItemID.CandyCorn, // CandyCorn
+				ItemID.ExplosiveJackOLantern, // JackOLantern
+				ItemID.Stake, // Stake
+				ItemID.Nail // NailFriendly
+			};
+		}
+
+		public static void Unload()
+		{
+			_ignored = null;
+			_ammo = null;
+		}
+
+		public override bool OnPickup(Item item, Player player)
+		{
+			if (_ignored.Contains(item.type))
 				return true;
 
-			bool hotbarWhenFull = ModContent.GetInstance<NoHotbarPickupConfig>().hotbarWhenFull;
-			bool pickupDirection = ModContent.GetInstance<NoHotbarPickupConfig>().pickupDirection;
+			if (item.modItem?.ItemSpace(player) == true)
+				return true;
 
 			// player.inventory [59]
 			// 0-9 hotbar
@@ -60,106 +86,121 @@ namespace NoHotbarPickup
 			// 50-53 coins
 			// 54-57 ammo
 			// 58 mouse ???
-			void textAndSound(int stack) {
+			void TextAndSound(int stack)
+			{
 				ItemText.NewText(item, stack);
 				Main.PlaySound(SoundID.Grab, player.position);
 			}
 
-			bool pickup(int from, int to, int emptySlot) {
-				for (int i = from; i < to; i++) {
-					// check inventory and hotbar for item
+			bool Pickup(int from, int to, int emptySlot)
+			{
+				// check inventory and hotbar for item to stack into
+				for (int i = from; i < to; i++)
+				{
 					Item invItem = player.inventory[i];
-					if (invItem.type == item.type) {
-						// item already in inventory
-						if (invItem.stack == invItem.maxStack)
-							continue;
 
-						if (invItem.maxStack == 1) {
-							// item can't stack
-							if (emptySlot != -1) {
-								player.inventory[emptySlot] = item;
-								textAndSound(item.stack);
-							}
-						}
-						else if (invItem.stack + item.stack > invItem.maxStack) {
-							// item can stack but stack + existing.stack > maxStack
-							//	add what can be added to existing
-							int origStack = item.stack;
-							item.stack -= invItem.maxStack - invItem.stack;
-							invItem.stack = invItem.maxStack;
-							//	add new item using remainder (if there's a spot for it)
-							if (emptySlot != -1) {
-								player.inventory[emptySlot] = item;
-								textAndSound(origStack);
-							}
-							else {
-								player.QuickSpawnClonedItem(item, item.stack);
-								textAndSound(origStack - item.stack);
-							}
-						}
-						else {
-							// item can stack
-							invItem.stack += item.stack;
-							textAndSound(item.stack);
-						}
-						// item has been picked up
-						return true;
+					if (invItem.type != item.type)
+						continue;
+
+					if (invItem.stack == invItem.maxStack)
+						continue;
+
+					if (invItem.maxStack == 1) // item doesn't stack
+					{
+						if (emptySlot == -1)
+							return true;
+
+						player.inventory[emptySlot] = item;
+						TextAndSound(item.stack);
 					}
+					else if (invItem.stack + item.stack > invItem.maxStack)
+					{
+						// item can stack, but stack + existing.stack > maxStack
+						// add what can be added to existing
+						int origStack = item.stack;
+						item.stack -= invItem.maxStack - invItem.stack;
+						invItem.stack = invItem.maxStack;
+						// add new item using remainder (if there's a spot for it)
+						if (emptySlot != -1)
+						{
+							player.inventory[emptySlot] = item;
+							TextAndSound(origStack);
+						}
+						else
+						{
+							player.QuickSpawnClonedItem(item, item.stack);
+							TextAndSound(origStack - item.stack);
+						}
+					}
+					else
+					{
+						// item can stack
+						invItem.stack += item.stack;
+						TextAndSound(item.stack);
+					}
+
+					// item has been picked up
+					return true;
 				}
+
 				// item not in inventory
 				return false;
 			}
 
-			if (ammos.Contains(item.ammo)) {
+			if (_ammo.Contains(item.ammo) || item.shoot != ItemID.None)
+			{
 				int firstEmptyAmmoSlot = -1;
 
 				for (int i = 54; i < 58; i++)
-					if (player.inventory[i].type == ItemID.None) {
+					if (player.inventory[i].type == ItemID.None)
+					{
 						firstEmptyAmmoSlot = i;
 						break;
 					}
 
-				if (pickup(54, 58, firstEmptyAmmoSlot))
+				if (Pickup(54, 58, firstEmptyAmmoSlot))
 					return false;
 			}
 
-			// find open slot based on config option `pickupDirection`
-			int start = pickupDirection ? 49 : 10;
-			int end = pickupDirection ? 10 : 49;
-			int step = pickupDirection ? -1 : 1;
+			// find open slot based on config option 'PickupDirection'
+			(int start, int end, int step) = NoHotbarPickupConfig.PickupDirection ? (49, 10, -1) : (10, 49, 1);
 			int firstEmptySlot = -1;
 
 			for (int i = start; i != end; i += step)
-				if (player.inventory[i].type == ItemID.None) {
+				if (player.inventory[i].type == ItemID.None)
+				{
 					firstEmptySlot = i;
 					break;
 				}
 
-			if (firstEmptySlot == -1 && hotbarWhenFull)
+			if (firstEmptySlot == -1 && NoHotbarPickupConfig.HotbarWhenFull)
 				for (int i = 0; i < 10; i++)
-					if (player.inventory[i].type == ItemID.None) {
+					if (player.inventory[i].type == ItemID.None)
+					{
 						firstEmptySlot = i;
 						break;
 					}
 
-			if (pickup(0, 50, firstEmptySlot))
+			if (Pickup(0, 50, firstEmptySlot))
 				return false;
 
-			if (firstEmptySlot != -1) {
-				player.inventory[firstEmptySlot] = item;
-				textAndSound(item.stack);
-			}
+			if (firstEmptySlot == -1)
+				return false;
+
+			player.inventory[firstEmptySlot] = item;
+			TextAndSound(item.stack);
 
 			return false;
 		}
 
 		public override bool CanPickup(Item item, Player player)
 		{
-			if (ignored.Contains(item.type))
+			if (_ignored.Contains(item.type))
 				return true;
 
-			bool hotbarWhenFull = ModContent.GetInstance<NoHotbarPickupConfig>().hotbarWhenFull;
-			bool pickupDirection = ModContent.GetInstance<NoHotbarPickupConfig>().pickupDirection;
+			if (item.modItem?.ItemSpace(player) == true)
+				return true;
+
 			// player.inventory [59]
 			// 0-9 hotbar
 			// 10-49 are actual inventory
@@ -167,44 +208,53 @@ namespace NoHotbarPickup
 			// 54-57 ammo
 			// 58 mouse ???
 
-			bool canPickup(int from, int to) {
-				for (int i = from; i < to; i++) {
+			bool HasRoom(int from, int to)
+			{
+				for (int i = from; i < to; i++)
+				{
 					// check inventory and hotbar for item
 					Item invItem = player.inventory[i];
-					if (invItem.type == item.type) {
-						// item already in inventory
-						if (invItem.stack == invItem.maxStack)
-							continue;
+					if (invItem.type != item.type)
+						continue;
 
-						return true;
-					}
+					// item already in inventory
+					if (invItem.stack == invItem.maxStack)
+						continue;
+
+					return true;
 				}
+
 				return false;
 			}
 
-			if (ammos.Any(type => type == item.ammo) && canPickup(54, 58))
+			if (_ammo.Any(type => type == item.ammo) && HasRoom(54, 58))
 				return true;
 
-			// find open slot based on config option `pickupDirection`
-			int start = pickupDirection ? 49 : 10;
-			int end = pickupDirection ? 10 : 49;
-			int step = pickupDirection ? -1 : 1;
+			// find open slot based on config option 'PickupDirection'
+			(int start, int end, int step) = NoHotbarPickupConfig.PickupDirection ? (49, 10, -1) : (10, 49, 1);
 			int firstEmptySlot = -1;
 
 			for (int i = start; i != end; i += step)
-				if (player.inventory[i].type == ItemID.None) {
+				if (player.inventory[i].type == ItemID.None)
+				{
 					firstEmptySlot = i;
 					break;
 				}
 
-			if (firstEmptySlot == -1 && hotbarWhenFull)
-				for (int i = 0; i < 10; i++)
-					if (player.inventory[i].type == ItemID.None) {
-						firstEmptySlot = i;
-						break;
-					}
+			if (firstEmptySlot != -1)
+				return true;
 
-			return canPickup(0, 50) || firstEmptySlot != -1;
+			if (!NoHotbarPickupConfig.HotbarWhenFull)
+				return HasRoom(0, 50);
+
+			for (int i = 0; i < 10; i++)
+				if (player.inventory[i].type == ItemID.None)
+				{
+					firstEmptySlot = i;
+					break;
+				}
+
+			return HasRoom(0, 50) || firstEmptySlot != -1;
 		}
 	}
 }
