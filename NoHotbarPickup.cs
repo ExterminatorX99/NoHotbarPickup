@@ -1,17 +1,7 @@
 using Terraria.ModLoader;
 
-namespace NoHotbarPickup
-{
-	public class NoHotbarPickup : Mod
-	{
-		public override void Load()
-		{
-			NoHotbarPickupGlobal.Load();
-		}
+namespace NoHotbarPickup;
 
-		public override void Unload()
-		{
-			NoHotbarPickupGlobal.Unload();
-		}
-	}
+public class NoHotbarPickup : Mod
+{
 }

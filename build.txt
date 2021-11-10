@@ -1,6 +1,6 @@
 displayName = No Hotbar Pickup
 author = Exterminator
-version = 0.4.4
+version = 0.5.0
 homepage = https://github.com/ExterminatorX99/NoHotbarPickup
 includeSource = true
 includePDB = true
